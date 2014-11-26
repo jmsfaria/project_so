@@ -128,20 +128,62 @@ void update_file()
   	new_file = fopen("estatiscas.txt","w");
 }
 
+char *readLine(FILE *file) 
+{
+    if (file == NULL) {
+        printf("Error: file pointer is null.");
+        exit(1);
+    }
+
+    int maximumLineLength = 128;
+    char *lineBuffer = (char *)malloc(sizeof(char) * maximumLineLength);
+
+    if (lineBuffer == NULL) {
+        printf("Error allocating memory for line buffer.");
+        exit(1);
+    }
+
+    char ch = getc(file);
+    int count = 0;
+
+    while ((ch != '\n') && (ch != EOF)) {
+        if (count == maximumLineLength) {
+            maximumLineLength += 128;
+            lineBuffer = (char*) realloc(lineBuffer, maximumLineLength);
+            if (lineBuffer == NULL) {
+                printf("Error reallocating space for line buffer.");
+                exit(1);
+            }
+        }
+        lineBuffer[count] = ch;
+        count++;
+
+        ch = getc(file);
+    }
+
+    lineBuffer[count] = '\0';
+    char line[count + 1];
+    strncpy(line, lineBuffer, (count + 1));
+    free(lineBuffer);
+    char *constLine = line;
+    return constLine;
+}
+
 void config()
 {
 	signal(SIGHUP, mysighup);
-
-  	shared_memory *data_config;
-  	char str[250];
-  	fp = fopen("config.txt","r");
-  	fgets(str,250,fp);
-
-
-  	//data_config->NUM_THREADS = atoi(gets(fp));
-  	//data_config->schedular = atoi(gets(fp));
-  	//data_config->scripts = gets(fp);
-  	fclose(fp);
+	
+	int i = 0;
+	char camps[4];
+	char *str;
+	char *stderr;
+	FILE *fp;
+    fp = fopen("config.txt","r");
+    while(!feof(fp))
+    {
+    	str = readLine(fp);
+    	printf("%s\n", str);
+    }
 }
 
 
@@ -151,6 +193,7 @@ int main(int argc, char ** argv)
     socklen_t client_name_len = sizeof(client_name);
     int port;
 	int count = 0;
+	config();
 
 	//Redirects SIGINT to sigint()
 	signal(SIGINT, mysigint);
@@ -165,10 +208,6 @@ int main(int argc, char ** argv)
 		exit(1);
 	}
 
-	while(1)
-	{
-		printf("1\n");
-	}
 	//pipe(channel);
 
 	create_process();
@@ -275,7 +314,7 @@ void send_header(int socket)
 void execute_script(int socket)
 {
 	// Currently unsupported, return error code to client
-        cannot_execute(socket);
+    cannot_execute(socket);
 	exit(0);
 	return;
 }
